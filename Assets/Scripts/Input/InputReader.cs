@@ -22,6 +22,21 @@ namespace Input
             MoveEvent.Invoke(context.ReadValue<Vector2>());
         }
 
+        public void OnShot(InputAction.CallbackContext context)
+        {
+            if (!context.performed) return;
+            var mousePosition = GameInput.Gameplay.MousePosition.ReadValue<Vector2>();
+
+            var worldPosition = (Vector2)Camera.main!.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y,
+                Camera.main.transform.position.z));
+            ShotEvent.Invoke(worldPosition);
+        }
+
+        public void OnMousePosition(InputAction.CallbackContext context)
+        {
+        }
+
         public event UnityAction<Vector2> MoveEvent = delegate { };
+        public event UnityAction<Vector2> ShotEvent = delegate { };
     }
 }
