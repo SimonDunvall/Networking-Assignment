@@ -7,8 +7,10 @@ public class Player : NetworkBehaviour
     [SerializeField] private InputReader InputReader;
 
     [SerializeField] private float SpeedMultiplier;
+    [SerializeField] private float FireRate;
 
     private readonly NetworkVariable<Vector2> MoveInput = new();
+    private float AutoFirringTimer;
     private BulletPool BulletPool;
 
     private void Start()
@@ -20,9 +22,20 @@ public class Player : NetworkBehaviour
         InputReader.ShotEvent += OnShot;
     }
 
+    private void Update()
+    {
+        if (IsLocalPlayer && InputReader.IsShooting && Time.time >= AutoFirringTimer) AutoFirringLogic();
+    }
+
     private void FixedUpdate()
     {
         if (IsServer) transform.position += (Vector3)MoveInput.Value * SpeedMultiplier;
+    }
+
+    private void AutoFirringLogic()
+    {
+        AutoFirringTimer = Time.time + FireRate;
+        OnShot(InputReader.MousePosition);
     }
 
     private void OnShot(Vector2 input)

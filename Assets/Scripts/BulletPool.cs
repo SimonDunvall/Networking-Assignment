@@ -35,8 +35,7 @@ public class BulletPool : MonoBehaviour
             bullet = Instantiate(BulletPrefab, position, rotation);
         }
 
-        var ob = bullet.GetComponent<NetworkObject>();
-        if (ob != null) ob.Spawn();
+        if (bullet.TryGetComponent(out NetworkObject ob)) ob.Spawn();
 
         return bullet;
     }

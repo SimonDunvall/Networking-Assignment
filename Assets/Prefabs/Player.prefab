@@ -153,4 +153,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   InputReader: {fileID: 11400000, guid: 60ef5e6422aaa4d13ae0d66187aa6ee3, type: 2}
   SpeedMultiplier: 0.1
-  BulletPrefab: {fileID: -2559493628739460727, guid: f7a97de6fe3b845afa917fb926b60649, type: 3}
+  FireRate: 0.3
