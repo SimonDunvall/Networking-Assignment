@@ -1,17 +1,43 @@
+using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
-public class Bullet : MonoBehaviour
+public class Bullet : NetworkBehaviour
 {
     [SerializeField] private float Speed;
-    private Vector2 Direction;
+    [SerializeField] private float DespawnTime;
+    private BulletPool BulletPool;
+    internal Vector2 Direction { private get; set; }
+
+    private void Start()
+    {
+        if (IsServer) BulletPool = FindObjectOfType<BulletPool>();
+    }
 
     private void FixedUpdate()
     {
-        transform.position += (Vector3)Direction * (Speed * Time.deltaTime);
+        if (IsServer) transform.position += (Vector3)Direction * (Speed * Time.deltaTime);
     }
 
-    public void SetDirection(Vector2 direction)
+    private void OnEnable()
     {
-        Direction = direction;
+        StartCoroutine(Despawn(DespawnTime));
+    }
+
+    private void OnDisable()
+    {
+        StopAllCoroutines();
+    }
+
+    private IEnumerator Despawn(float time)
+    {
+        yield return new WaitForSeconds(time);
+        if (IsServer) DespawnRPC();
+    }
+
+    [Rpc(SendTo.Server)]
+    private void DespawnRPC()
+    {
+        BulletPool.Despawn(this);
     }
 }

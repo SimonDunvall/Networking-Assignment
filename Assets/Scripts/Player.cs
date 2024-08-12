@@ -7,12 +7,14 @@ public class Player : NetworkBehaviour
     [SerializeField] private InputReader InputReader;
 
     [SerializeField] private float SpeedMultiplier;
-    [SerializeField] private Bullet BulletPrefab;
 
     private readonly NetworkVariable<Vector2> MoveInput = new();
+    private BulletPool BulletPool;
 
     private void Start()
     {
+        BulletPool = FindObjectOfType<BulletPool>();
+
         if (InputReader == null || !IsLocalPlayer) return;
         InputReader.MoveEvent += OnMove;
         InputReader.ShotEvent += OnShot;
@@ -31,14 +33,11 @@ public class Player : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void ShotRPC(Vector2 data)
     {
-        var bullet = Instantiate(BulletPrefab, transform);
-        var ob = bullet.GetComponent<NetworkObject>();
-        ob.Spawn();
-
+        var bullet = BulletPool.Spawn(transform.position, transform.rotation);
         var bulletDirection = data - (Vector2)transform.position;
         bulletDirection.Normalize();
 
-        bullet.SetDirection(bulletDirection);
+        bullet.Direction = bulletDirection;
     }
 
     private void OnMove(Vector2 input)
