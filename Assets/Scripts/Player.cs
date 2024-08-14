@@ -12,6 +12,7 @@ public class Player : NetworkBehaviour
     private readonly NetworkVariable<Vector2> MoveInput = new();
     private float AutoFirringTimer;
     private BulletPool BulletPool;
+    private bool IsMoving;
 
     private void Start()
     {
@@ -29,7 +30,9 @@ public class Player : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (IsServer) transform.position += (Vector3)MoveInput.Value * SpeedMultiplier;
+        if (!IsServer) return;
+        transform.position += (Vector3)MoveInput.Value * SpeedMultiplier;
+        IsMoving = MoveInput.Value != Vector2.zero;
     }
 
     private void AutoFirringLogic()
@@ -40,7 +43,7 @@ public class Player : NetworkBehaviour
 
     private void OnShot(Vector2 input)
     {
-        ShotRPC(input);
+        if (!IsMoving) ShotRPC(input);
     }
 
     [Rpc(SendTo.Server)]
