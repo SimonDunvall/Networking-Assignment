@@ -18,7 +18,10 @@ public class Player : NetworkBehaviour
     {
         BulletPool = FindObjectOfType<BulletPool>();
 
-        if (InputReader == null || !IsLocalPlayer) return;
+        if (!IsLocalPlayer) return;
+        CameraManager.Instance.SetPlayer(this);
+
+        if (InputReader == null) return;
         InputReader.MoveEvent += OnMove;
         InputReader.ShotEvent += OnShot;
     }
@@ -43,12 +46,13 @@ public class Player : NetworkBehaviour
 
     private void OnShot(Vector2 input)
     {
-        if (!IsMoving) ShotRPC(input);
+        ShotRPC(input);
     }
 
     [Rpc(SendTo.Server)]
     private void ShotRPC(Vector2 data)
     {
+        if (IsMoving) return;
         var bullet = BulletPool.Spawn(transform.position, transform.rotation);
         var bulletDirection = data - (Vector2)transform.position;
         bulletDirection.Normalize();
