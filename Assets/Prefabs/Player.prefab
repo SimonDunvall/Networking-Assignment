@@ -154,8 +154,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputReader: {fileID: 11400000, guid: 60ef5e6422aaa4d13ae0d66187aa6ee3, type: 2}
-  SpeedMultiplier: 0.1
+  SpeedMultiplier: 3
   FireRate: 0.3
+  StartHealth: 100
+  PlayerPrefab: {fileID: 1765080497176994885}
 --- !u!61 &-387951480497110599
 BoxCollider2D:
   m_ObjectHideFlags: 0

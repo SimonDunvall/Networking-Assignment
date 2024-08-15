@@ -20,7 +20,7 @@ public class BulletPool : MonoBehaviour
         }
     }
 
-    internal Bullet Spawn(Vector3 position, Quaternion rotation)
+    internal Bullet Spawn(Vector3 position, Quaternion rotation, NetworkObjectReference owner)
     {
         Bullet bullet;
         if (poolQueue.Count > 0)
@@ -34,6 +34,8 @@ public class BulletPool : MonoBehaviour
         {
             bullet = Instantiate(BulletPrefab, position, rotation);
         }
+
+        bullet.SetOwner(owner);
 
         if (bullet.TryGetComponent(out NetworkObject ob)) ob.Spawn();
 
