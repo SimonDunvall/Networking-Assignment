@@ -12,7 +12,6 @@ public class Bullet : NetworkBehaviour
     private NetworkObjectReference OwnerReference;
     internal Vector2 Direction { private get; set; }
 
-
     private void Start()
     {
         if (IsServer)
@@ -22,14 +21,9 @@ public class Bullet : NetworkBehaviour
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (IsServer) transform.position += (Vector3)Direction * (Speed * Time.deltaTime);
-    }
-
-    private void OnEnable()
-    {
-        StartCoroutine(Despawn(DespawnTime));
     }
 
     private void OnDisable()
@@ -50,6 +44,12 @@ public class Bullet : NetworkBehaviour
                 RequestDespawnServerRpc();
             }
         }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        if (IsServer) StartCoroutine(Despawn(DespawnTime));
     }
 
     [Rpc(SendTo.Server)]

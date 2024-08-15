@@ -8,9 +8,7 @@ namespace Input
     public class InputReader : ScriptableObject, GameInput.IGameplayActions
     {
         private GameInput GameInput;
-
-        internal bool IsShooting { get; private set; }
-        internal Vector2 MousePosition { get; private set; }
+        private Vector2 MousePosition { get; set; }
 
         private void OnEnable()
         {
@@ -27,15 +25,7 @@ namespace Input
 
         public void OnShot(InputAction.CallbackContext context)
         {
-            if (context.performed)
-            {
-                IsShooting = true;
-                ShotEvent.Invoke(MousePosition);
-            }
-            else if (context.canceled)
-            {
-                IsShooting = false;
-            }
+            if (context.performed) ShotEvent.Invoke(MousePosition);
         }
 
         public void OnMousePosition(InputAction.CallbackContext context)

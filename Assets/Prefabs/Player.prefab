@@ -157,7 +157,6 @@ MonoBehaviour:
   SpeedMultiplier: 3
   FireRate: 0.3
   StartHealth: 100
-  PlayerPrefab: {fileID: 1765080497176994885}
 --- !u!61 &-387951480497110599
 BoxCollider2D:
   m_ObjectHideFlags: 0

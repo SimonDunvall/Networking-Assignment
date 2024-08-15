@@ -6,7 +6,6 @@ public class Player : NetworkBehaviour
 {
     [SerializeField] private InputReader InputReader;
     [SerializeField] private float SpeedMultiplier;
-    [SerializeField] private float FireRate;
     [SerializeField] private float StartHealth;
 
     internal readonly NetworkVariable<float> Health = new(writePerm:
@@ -41,8 +40,6 @@ public class Player : NetworkBehaviour
 
     private void Update()
     {
-        if (IsLocalPlayer && InputReader.IsShooting && Time.time >= AutoFirringTimer) HandleAutoFiring();
-
         if (IsServer && Health.Value <= 0) Respawn();
     }
 
@@ -65,12 +62,6 @@ public class Player : NetworkBehaviour
         }
     }
 
-    private void HandleAutoFiring()
-    {
-        AutoFirringTimer = Time.time + FireRate;
-        OnShot(InputReader.MousePosition);
-    }
-
     private void OnShot(Vector2 input)
     {
         ShotRPC(input);
@@ -83,11 +74,13 @@ public class Player : NetworkBehaviour
         {
             var bullet = BulletPool.Spawn(transform.position, transform.rotation,
                 new NetworkObjectReference(NetworkObject));
+            if (bullet)
+            {
+                var bulletDirection = data - (Vector2)transform.position;
+                bulletDirection.Normalize();
 
-            var bulletDirection = data - (Vector2)transform.position;
-            bulletDirection.Normalize();
-
-            bullet.Direction = bulletDirection;
+                bullet.Direction = bulletDirection;
+            }
         }
     }
 

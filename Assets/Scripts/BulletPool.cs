@@ -2,17 +2,21 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class BulletPool : MonoBehaviour
+public class BulletPool : NetworkBehaviour
 {
     [SerializeField] private Bullet BulletPrefab;
-
     [SerializeField] private int InitialSize;
 
     private Queue<Bullet> PoolQueue;
 
-    private void Start()
+    private void OnEnable()
     {
-        InitializePool();
+        NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
+    }
+
+    private void HandleServerStarted()
+    {
+        if (IsServer) InitializePool();
     }
 
     private void InitializePool()
@@ -28,6 +32,8 @@ public class BulletPool : MonoBehaviour
 
     internal Bullet Spawn(Vector3 position, Quaternion rotation, NetworkObjectReference owner)
     {
+        if (!IsServer) return null;
+
         Bullet bullet;
 
         if (PoolQueue.Count > 0)
@@ -43,7 +49,6 @@ public class BulletPool : MonoBehaviour
         }
 
         bullet.SetOwner(owner);
-
         if (bullet.TryGetComponent(out NetworkObject networkObject)) networkObject.Spawn();
 
         return bullet;
@@ -51,9 +56,12 @@ public class BulletPool : MonoBehaviour
 
     internal void Despawn(Bullet bullet)
     {
+        if (!IsServer) return;
+
         bullet.gameObject.SetActive(false);
 
-        if (bullet.TryGetComponent(out NetworkObject networkObject)) networkObject.Despawn(false);
+        if (bullet.TryGetComponent(out NetworkObject networkObject) && networkObject.IsSpawned)
+            networkObject.Despawn(false);
 
         PoolQueue.Enqueue(bullet);
     }
