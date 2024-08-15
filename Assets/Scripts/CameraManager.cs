@@ -16,7 +16,7 @@ public class CameraManager : MonoBehaviour
         else
             Destroy(gameObject);
     }
-
+ 
     private void FixedUpdate()
     {
         if (Player)

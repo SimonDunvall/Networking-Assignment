@@ -5,27 +5,34 @@ using UnityEngine;
 public class BulletPool : MonoBehaviour
 {
     [SerializeField] private Bullet BulletPrefab;
+
     [SerializeField] private int InitialSize;
 
-    private Queue<Bullet> poolQueue;
+    private Queue<Bullet> PoolQueue;
 
     private void Start()
     {
-        poolQueue = new Queue<Bullet>();
+        InitializePool();
+    }
+
+    private void InitializePool()
+    {
+        PoolQueue = new Queue<Bullet>();
         for (int i = 0; i < InitialSize; i++)
         {
             var bullet = Instantiate(BulletPrefab);
             bullet.gameObject.SetActive(false);
-            poolQueue.Enqueue(bullet);
+            PoolQueue.Enqueue(bullet);
         }
     }
 
     internal Bullet Spawn(Vector3 position, Quaternion rotation, NetworkObjectReference owner)
     {
         Bullet bullet;
-        if (poolQueue.Count > 0)
+
+        if (PoolQueue.Count > 0)
         {
-            bullet = poolQueue.Dequeue();
+            bullet = PoolQueue.Dequeue();
             bullet.transform.position = position;
             bullet.transform.rotation = rotation;
             bullet.gameObject.SetActive(true);
@@ -37,7 +44,7 @@ public class BulletPool : MonoBehaviour
 
         bullet.SetOwner(owner);
 
-        if (bullet.TryGetComponent(out NetworkObject ob)) ob.Spawn();
+        if (bullet.TryGetComponent(out NetworkObject networkObject)) networkObject.Spawn();
 
         return bullet;
     }
@@ -45,7 +52,9 @@ public class BulletPool : MonoBehaviour
     internal void Despawn(Bullet bullet)
     {
         bullet.gameObject.SetActive(false);
-        if (bullet.TryGetComponent(out NetworkObject ob)) ob.Despawn(false);
-        poolQueue.Enqueue(bullet);
+
+        if (bullet.TryGetComponent(out NetworkObject networkObject)) networkObject.Despawn(false);
+
+        PoolQueue.Enqueue(bullet);
     }
 }

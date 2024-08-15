@@ -5,13 +5,18 @@ using UnityEngine;
 public class Player : NetworkBehaviour
 {
     [SerializeField] private InputReader InputReader;
-
     [SerializeField] private float SpeedMultiplier;
     [SerializeField] private float FireRate;
     [SerializeField] private float StartHealth;
-    internal readonly NetworkVariable<float> Health = new();
 
-    private readonly NetworkVariable<Vector2> MoveInput = new();
+    internal readonly NetworkVariable<float> Health = new(writePerm:
+        NetworkVariableWritePermission.Server
+    );
+
+    private readonly NetworkVariable<Vector2> MoveInput = new(writePerm:
+        NetworkVariableWritePermission.Server
+    );
+
     private float AutoFirringTimer;
     private BulletPool BulletPool;
     private bool IsMoving;
@@ -22,28 +27,33 @@ public class Player : NetworkBehaviour
 
         BulletPool = FindObjectOfType<BulletPool>();
 
-        if (!IsLocalPlayer) return;
-        CameraManager.Instance.SetPlayer(this);
+        if (IsLocalPlayer)
+        {
+            CameraManager.Instance.SetPlayer(this);
 
-        if (InputReader == null) return;
-        InputReader.MoveEvent += OnMove;
-        InputReader.ShotEvent += OnShot;
+            if (InputReader != null)
+            {
+                InputReader.MoveEvent += OnMove;
+                InputReader.ShotEvent += OnShot;
+            }
+        }
     }
 
     private void Update()
     {
-        if (IsLocalPlayer && InputReader.IsShooting && Time.time >= AutoFirringTimer) AutoFirringLogic();
+        if (IsLocalPlayer && InputReader.IsShooting && Time.time >= AutoFirringTimer) HandleAutoFiring();
 
-        if (IsServer)
-            if (Health.Value <= 0)
-                Respawn();
+        if (IsServer && Health.Value <= 0) Respawn();
     }
 
     private void FixedUpdate()
     {
-        if (!IsServer) return;
-        transform.position += (Vector3)MoveInput.Value * (SpeedMultiplier * Time.deltaTime);
-        IsMoving = MoveInput.Value != Vector2.zero;
+        if (IsServer)
+        {
+            var moveVector = (Vector3)MoveInput.Value * (SpeedMultiplier * Time.deltaTime);
+            transform.position += moveVector;
+            IsMoving = MoveInput.Value != Vector2.zero;
+        }
     }
 
     private void Respawn()
@@ -55,7 +65,7 @@ public class Player : NetworkBehaviour
         }
     }
 
-    private void AutoFirringLogic()
+    private void HandleAutoFiring()
     {
         AutoFirringTimer = Time.time + FireRate;
         OnShot(InputReader.MousePosition);
@@ -69,18 +79,21 @@ public class Player : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void ShotRPC(Vector2 data)
     {
-        if (IsMoving) return;
-        var bullet = BulletPool.Spawn(transform.position, transform.rotation,
-            new NetworkObjectReference(NetworkObject));
-        var bulletDirection = data - (Vector2)transform.position;
-        bulletDirection.Normalize();
+        if (!IsMoving)
+        {
+            var bullet = BulletPool.Spawn(transform.position, transform.rotation,
+                new NetworkObjectReference(NetworkObject));
 
-        bullet.Direction = bulletDirection;
+            var bulletDirection = data - (Vector2)transform.position;
+            bulletDirection.Normalize();
+
+            bullet.Direction = bulletDirection;
+        }
     }
 
     private void OnMove(Vector2 input)
     {
-        MoveRPC(input);
+        if (MoveInput.Value != input) MoveRPC(input);
     }
 
     [Rpc(SendTo.Server)]

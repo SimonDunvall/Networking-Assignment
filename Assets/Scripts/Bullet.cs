@@ -15,7 +15,11 @@ public class Bullet : NetworkBehaviour
 
     private void Start()
     {
-        if (IsServer) BulletPool = FindObjectOfType<BulletPool>();
+        if (IsServer)
+        {
+            BulletPool = FindObjectOfType<BulletPool>();
+            if (BulletPool == null) Debug.LogError("BulletPool not found in the scene.");
+        }
     }
 
     private void Update()
@@ -33,38 +37,41 @@ public class Bullet : NetworkBehaviour
         StopAllCoroutines();
     }
 
-    private void OnCollisionEnter2D(Collision2D other)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         if (IsServer)
         {
-            var player = other.gameObject.GetComponent<Player>();
+            var player = collision.gameObject.GetComponent<Player>();
             if (player != null)
             {
                 if (OwnerReference.TryGet(out var ownerObject) && ownerObject == player.NetworkObject) return;
 
-                HitServerRpc(player.NetworkObjectId);
-                DespawnServerRpc();
+                ApplyDamageServerRpc(player.NetworkObjectId);
+                RequestDespawnServerRpc();
             }
         }
     }
 
-    [ServerRpc]
-    private void HitServerRpc(ulong playerId)
+    [Rpc(SendTo.Server)]
+    private void RequestDespawnServerRpc()
     {
-        var player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerId]?.GetComponent<Player>();
-        if (player != null) player.Health.Value -= DamageAmount;
+        BulletPool.Despawn(this);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void ApplyDamageServerRpc(ulong playerId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerId, out var networkObject))
+        {
+            var player = networkObject.GetComponent<Player>();
+            if (player != null) player.Health.Value -= DamageAmount;
+        }
     }
 
     private IEnumerator Despawn(float time)
     {
         yield return new WaitForSeconds(time);
-        if (IsServer) DespawnServerRpc();
-    }
-
-    [ServerRpc]
-    private void DespawnServerRpc()
-    {
-        BulletPool.Despawn(this);
+        if (IsServer) RequestDespawnServerRpc();
     }
 
     public void SetOwner(NetworkObjectReference owner)
