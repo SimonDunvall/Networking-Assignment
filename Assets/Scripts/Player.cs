@@ -20,6 +20,8 @@ public class Player : NetworkBehaviour
     private BulletPool BulletPool;
     private bool IsMoving;
 
+    private Vector2 LocalInput;
+
     private void Start()
     {
         if (IsServer) Health.Value = StartHealth;
@@ -45,12 +47,17 @@ public class Player : NetworkBehaviour
 
     private void FixedUpdate()
     {
+        if (IsLocalPlayer) transform.position = MovementCalc(LocalInput);
         if (IsServer)
         {
-            var moveVector = (Vector3)MoveInput.Value * (SpeedMultiplier * Time.deltaTime);
-            transform.position += moveVector;
+            transform.position = MovementCalc(MoveInput.Value);
             IsMoving = MoveInput.Value != Vector2.zero;
         }
+    }
+
+    private Vector3 MovementCalc(Vector2 input)
+    {
+        return transform.position += (Vector3)input * (SpeedMultiplier * Time.fixedDeltaTime);
     }
 
     private void Respawn()
@@ -86,7 +93,16 @@ public class Player : NetworkBehaviour
 
     private void OnMove(Vector2 input)
     {
-        if (MoveInput.Value != input) MoveRPC(input);
+        if (MoveInput.Value != input)
+        {
+            MoveRPC(input);
+            LocalMove(input);
+        }
+    }
+
+    private void LocalMove(Vector2 data)
+    {
+        LocalInput = data;
     }
 
     [Rpc(SendTo.Server)]
